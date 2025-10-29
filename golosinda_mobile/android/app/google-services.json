@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "331327441055",
+    "project_id": "advmobprog-firebase-1c34d",
+    "storage_bucket": "advmobprog-firebase-1c34d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:331327441055:android:b0e0b48c32e24290127aaa",
+        "android_client_info": {
+          "package_name": "com.example.golosinda_advmobprog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALcZWP2LdH56r6N6xjbIJbZXzd6C_0zYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

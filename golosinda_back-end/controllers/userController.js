@@ -164,6 +164,72 @@ const signupUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const { id } = req.params;
 
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
 
-module.exports = { getUsers, createUser, updateUser, deleteUser, loginUser, signupUser  };
+    // Find the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await User.findByIdAndUpdate(id, { password: hashedNewPassword });
+
+    res.json({ message: "Password changed successfully" });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+const updateUsername = async (req, res) => {
+  try {
+    const { username } = req.body;
+    const { id } = req.params;
+
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
+    // Check if username already exists (excluding current user)
+    const existingUser = await User.findOne({ 
+      username, 
+      _id: { $ne: id } 
+    });
+    
+    if (existingUser) {
+      return res.status(409).json({ message: "Username already in use" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id, 
+      { username }, 
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "Username updated successfully", user });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+module.exports = { getUsers, createUser, updateUser, deleteUser, loginUser, signupUser, updateUsername, changePassword };

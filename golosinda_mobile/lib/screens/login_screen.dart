@@ -18,13 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   @override
-  void dispose() {
+ void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
-
-  Future<void> _handleLogin() async {
+ 
+  Future<void> _handleMongoDBLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -36,18 +36,34 @@ class _LoginScreenState extends State<LoginScreen> {
           _passwordController.text,
         );
 
-        await _userService.saveUserData(response);
+        // Handle MongoDB login response structure
+        final Map<String, dynamic> resp = response;
+        final Map<String, dynamic>? userMap = resp['user'] is Map<String, dynamic> ? resp['user'] : null;
+        final String? token = resp['token'] is String ? resp['token'] as String : null;
+
+        if (userMap != null && token != null) {
+          final Map<String, dynamic> toSave = Map<String, dynamic>.from(userMap);
+          toSave['token'] = token;
+          // Map _id to uid for consistency
+          if (toSave['_id'] != null) {
+            toSave['uid'] = toSave['_id'];
+          }
+          await _userService.saveUserData(toSave);
+        } else {
+          // Fallback to old method if response structure is different
+          await _userService.saveUserData(response);
+        }
 
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Login successful!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('MongoDB Login successful!')),
+        );
 
         Navigator.pushReplacementNamed(context, '/home');
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: ${e.toString()}')),
+          SnackBar(content: Text('MongoDB Login failed: ${e.toString()}')),
         );
       } finally {
         if (mounted) {
@@ -59,6 +75,39 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleFirebaseLogin() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        await _userService.signIn(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Firebase Login successful!')),
+        );
+
+        Navigator.pushReplacementNamed(context, '/home');
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Firebase Login failed: ${e.toString()}')),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+  }
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,31 +186,115 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
 
                   // Login Button
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _handleMongoDBLogin,
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                            : const Text(
-                              'Log In',
-                              style: TextStyle(fontSize: 16),
+                    icon: const Icon(Icons.storage, color: Colors.white),
+                    label: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.green,
                             ),
+                          )
+                        : const Text(
+                            'Login with MongoDB',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
 
+                  const SizedBox(height: 12),
+
+                  // Firebase Login Button
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _handleFirebaseLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.local_fire_department, color: Colors.white),
+                    label: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.red,
+                            ),
+                          )
+                        : const Text(
+                            'Login with Firebase',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+ 
                   const SizedBox(height: 16),
+
+                  // Forgot Password Link (Firebase only)
+                  TextButton(
+                    onPressed: () async {
+                      if (_emailController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter your email first'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        await _userService.sendPasswordResetEmail(
+                          email: _emailController.text.trim(),
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Password reset email sent! Check your inbox.'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to send reset email: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    child: const Text(
+                      'Forgot Password? (Firebase)',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
                   // Sign Up Button
                   TextButton(
                     onPressed: () {

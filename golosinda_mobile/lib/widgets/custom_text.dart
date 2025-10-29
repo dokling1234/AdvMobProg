@@ -12,16 +12,18 @@ class CustomText extends StatelessWidget {
     this.fontStyle = FontStyle.normal,
     this.maxLines,
     this.overflow,
-    });
+    this.color,
+  });
 
-    final String text;
-    final double fontSize, letterSpacing;
-    final int? maxLines;
-    final TextOverflow? overflow;
-    final FontWeight fontWeight;
-    final TextAlign textAlign;
-    final String fontFamily;
-    final FontStyle fontStyle;
+  final String text;
+  final double fontSize, letterSpacing;
+  final int? maxLines;
+  final TextOverflow? overflow;
+  final FontWeight fontWeight;
+  final TextAlign textAlign;
+  final String fontFamily;
+  final FontStyle fontStyle;
+    final Color? color;
   @override
   Widget build(BuildContext context) {
     return Text(
@@ -34,8 +36,8 @@ class CustomText extends StatelessWidget {
         fontSize: fontSize,
         fontWeight: fontWeight,
         fontStyle: fontStyle,
-        letterSpacing: letterSpacing
-        ),
+        letterSpacing: letterSpacing,
+      ),
     );
   }
 }

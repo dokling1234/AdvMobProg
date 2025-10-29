@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:golosinda_advmobprog/screens/chat_screen.dart';
 import 'package:golosinda_advmobprog/screens/profile_screen.dart';
 import 'package:golosinda_advmobprog/screens/settings_screen.dart';
 import 'package:golosinda_advmobprog/services/user_service.dart'; // import UserService
@@ -28,7 +29,11 @@ class HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         elevation: 2,
         title: CustomText(
-          text: selectedIndex == 0 ? 'Home' : 'Articles',
+          text: selectedIndex == 0
+              ? 'Home'
+              : selectedIndex == 1
+              ? 'Chat'
+              : 'Profile',
           fontSize: 20.sp,
           fontWeight: FontWeight.w600,
         ),
@@ -39,9 +44,7 @@ class HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -49,7 +52,11 @@ class HomeScreenState extends State<HomeScreen> {
       ),
       body: PageView(
         controller: pageController,
-        children: const <Widget>[ArticleScreen(), Placeholder(), ProfileScreen()],
+        children: const <Widget>[
+          ArticleScreen(),
+          ChatScreen(),
+          ProfileScreen(),
+        ],
         onPageChanged: (page) {
           setState(() {
             selectedIndex = page;
@@ -63,7 +70,7 @@ class HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
+            icon: Icon(Icons.message),
             label: 'Notifications',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
